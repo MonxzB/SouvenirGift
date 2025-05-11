@@ -2,9 +2,9 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { faker } = require('@faker-js/faker');
 const slugify = require('slugify');
-const connectDB = require('./config/db');
-const Product = require('./models/products');
-const Category = require('./models/categories');
+const connectDB = require('../config/db');
+const Product = require('../models/products');
+const Category = require('../models/categories');
 
 // Kết nối DB
 connectDB();
@@ -31,7 +31,12 @@ const seedProducts = async (count = 50) => {
         stock: faker.number.int({ min: 0, max: 100 }),
         category: category.name,
         category_id: category._id,
-        image: faker.image.urlPicsumPhotos(),
+        // Chỉnh sửa trường images: tạo mảng ảnh giả
+        images: [
+          faker.image.urlPicsumPhotos(),
+          faker.image.urlPicsumPhotos(),
+          faker.image.urlPicsumPhotos(),
+        ],
         active: true,
       };
     });
@@ -46,3 +51,4 @@ const seedProducts = async (count = 50) => {
 };
 
 seedProducts(50);
+

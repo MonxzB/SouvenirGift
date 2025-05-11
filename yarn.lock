@@ -39,6 +39,11 @@
   resolved "https://registry.npmjs.org/@faker-js/faker/-/faker-9.7.0.tgz"
   integrity sha512-aozo5vqjCmDoXLNUJarFZx2IN/GgGaogY4TMJ6so/WLZOWpSV7fvj2dmrV6sEAnUm1O7aCrhTibjpzeDFgNqbg==
 
+"@google/generative-ai@^0.24.1":
+  version "0.24.1"
+  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.24.1.tgz#634a3c06f8ea7a6125c1b0d6c1e66bb11afb52c9"
+  integrity sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==
+
 "@hapi/hoek@^9.0.0", "@hapi/hoek@^9.3.0":
   version "9.3.0"
   resolved "https://registry.npmjs.org/@hapi/hoek/-/hoek-9.3.0.tgz"
@@ -77,6 +82,14 @@
   integrity sha512-EB0O3SCSNRUFk66iRCpI+cXzIjdswfCs7F6nOC3RAGJ7xr5YhaicvsRwJ9eyzYvYRlCSDUO/c7g4yNulxKC1WA==
   dependencies:
     sparse-bitfield "^3.0.3"
+
+"@payos/node@^1.0.10":
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@payos/node/-/node-1.0.10.tgz#abed00911190f813b1e4356fac47367a6ae1d23c"
+  integrity sha512-dY+WHd6pLa558a1G8yv6oKfVe5QLTNyYnQBaSQtwvMAm/p0faKAnfXt04LNIwO9/4buas4ES+sDxc1bfX/mVbQ==
+  dependencies:
+    axios "^1.5.0"
+    crypto "^1.0.1"
 
 "@scarf/scarf@=1.4.0":
   version "1.4.0"
@@ -178,7 +191,7 @@ asynckit@^0.4.0:
   resolved "https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz"
   integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
 
-axios@^1.9.0:
+axios@^1.5.0, axios@^1.9.0:
   version "1.9.0"
   resolved "https://registry.npmjs.org/axios/-/axios-1.9.0.tgz"
   integrity sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg==
@@ -400,6 +413,11 @@ cors@^2.8.5:
     object-assign "^4"
     vary "^1"
 
+crypto@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/crypto/-/crypto-1.0.1.tgz#2af1b7cad8175d24c8a1b0778255794a21803037"
+  integrity sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==
+
 date-fns@^4.1.0:
   version "4.1.0"
   resolved "https://registry.npmjs.org/date-fns/-/date-fns-4.1.0.tgz"
@@ -539,7 +557,7 @@ express-validator@^7.2.1:
 
 express@^5.1.0:
   version "5.1.0"
-  resolved "https://registry.npmjs.org/express/-/express-5.1.0.tgz"
+  resolved "https://registry.yarnpkg.com/express/-/express-5.1.0.tgz#d31beaf715a0016f0d53f47d3b4d7acf28c75cc9"
   integrity sha512-DT9ck5YIRU+8GYzzU5kT3eHGA5iL+1Zd0EutOmTE9Dtk+Tvuzd23VBU+ec7HPNSTxXYO55gPV/hq4pSBJDjFpA==
   dependencies:
     accepts "^2.0.0"
@@ -1271,7 +1289,7 @@ q@^1.5.1:
 
 qs@^6.14.0:
   version "6.14.0"
-  resolved "https://registry.npmjs.org/qs/-/qs-6.14.0.tgz"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.14.0.tgz#c63fa40680d2c5c941412a0e899c89af60c0a930"
   integrity sha512-YWWTjgABSKcvs/nWBi9PycY/JiPJqOD4JA6o9Sej2AtvSGarXxKC3OQSk4pAarbdQlKAh5D4FCQkJNkW+GAn3w==
   dependencies:
     side-channel "^1.1.0"
