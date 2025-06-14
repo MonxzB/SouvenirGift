@@ -31,8 +31,6 @@ exports.createOrder = async (req, res) => {
     if (product.stock < item.quantity) {
       return res.status(400).json({ message: `Sản phẩm ${product.name} không đủ tồn kho.` });
     }
-
-    // 🔥 Dòng này rất quan trọng — THÊM NGAY!
     item.name = product.name;
     // console.log("product.name", product.name);
     

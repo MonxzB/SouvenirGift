@@ -50,5 +50,5 @@ const seedProducts = async (count = 50) => {
   }
 };
 
-seedProducts(50);
+seedProducts(100);
 

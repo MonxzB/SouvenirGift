@@ -1,4 +1,6 @@
 const Product = require('../models/products');
+const Category = require('../models/categories');
+const Comment = require('../models/Comment');
 // const cloudinary = require('../config/cloudinary');
 const upload = require('../middleware/upload');
 
@@ -62,7 +64,15 @@ exports.getProductById = async (req, res) => {
     if (!product) {
       return res.status(404).json({ msg: 'Product not found' });
     }
-    res.json(product);  // Trả về sản phẩm nếu tìm thấy
+    // const category = await Product.findById(req.params.id).populate("category_id")
+    // product.category = category,
+    const comments = await Comment.find({ product_id: req.params.id })
+      .populate('_id', 'name') // chỉ lấy name người dùng
+      .sort({ createdAt: -1 }); // mới nhất trước
+    res.json({
+      product,
+      comments
+    }); 
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
