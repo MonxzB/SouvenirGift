@@ -1,5 +1,7 @@
 const Order = require('../models/orders');
 const payos = require('../utils/payos');
+const crypto = require('crypto');
+
 
 // Tạo link thanh toán
 const createPaymentLink = async (order) => {
@@ -32,13 +34,32 @@ const createPaymentLink = async (order) => {
   }
 };
 
+// Xác thực chữ ký webhook PayOS
+const verifyPayOSWebhook = (body) => {
+  const CLIENT_SECRET = process.env.PAYOS_CHECKSUM_KEY;
+  if (!CLIENT_SECRET) throw new Error('Missing PAYOS_CHECKSUM_KEY in .env');
+
+  const { amount, orderCode, transactionId, signature } = body;
+
+  // Nếu thiếu bất kỳ giá trị nào, return false luôn
+  if (!amount || !orderCode || !transactionId || !signature) return false;
+
+  const raw = `amount=${amount}&orderCode=${orderCode}&transactionId=${transactionId}`;
+  const hash = crypto.createHmac('sha256', CLIENT_SECRET).update(raw).digest('hex');
+
+  return hash === signature;
+};
+
+
 // Xử lý webhook từ PayOS
 const handleWebhook = async (req, res) => {
   try {
     // const data = payos.verifyPaymentWebhookData(req.body);
-    const data = req.body; // ⚠️ chỉ dùng để test Postman!
-
-
+    const data = req.body; 
+    
+    if (!verifyPayOSWebhook(data)) {
+      return res.status(400).send('Invalid signature');
+    }
     const order = await Order.findOne({ order_code: data.orderCode });
 
     if (!order) return res.status(404).send('Order not found');

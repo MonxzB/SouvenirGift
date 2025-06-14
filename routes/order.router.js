@@ -5,7 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 
 // Route tạo đơn hàng
-router.post('/create', createOrder);
+router.post('/create',authMiddleware, createOrder);
 // router.get('/status', getOrderStatus);
 router.post('/status', updateOrderStatus);
 router.get('/user',authMiddleware, getUserOrders);

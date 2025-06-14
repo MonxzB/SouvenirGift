@@ -34,18 +34,13 @@ const orderSchema = new mongoose.Schema({
     ref: 'OrderStatus', 
     required: true 
   },  // Trạng thái chính
-  status_sub_id: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'OrderStatusDescription',  // Tham chiếu đến trạng thái con
-    default: null 
-  },  // Trạng thái con
   shipping_address: { 
     type: String, 
     required: true 
   },
 items: [{
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  name: { type: String, required: true }, // 🔥 THÊM DÒNG NÀY
+  name: { type: String, required: true },
   quantity: { type: Number, required: true },
   price: { type: Number, required: true }
 }]

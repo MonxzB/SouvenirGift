@@ -6,7 +6,7 @@ const sendOtpEmail = async (email, otpCode) => {
   const html = `
   <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto;">
     <div style="text-align: center; padding: 20px 0;">
-      <img src="https://imgur.com/a/lQr9gJg" alt="Souvenir App Logo" style="max-width: 150px; height: auto;" />
+      <img src="https://res.cloudinary.com/dqwomkvxi/image/upload/v1749891201/Black_White_Monogram_S_Logo_sdbb7d.png" alt="Souvenir App Logo" style="max-width: 150px; height: auto;" />
     </div>
 
     <h2>Xin chào bạn,</h2>

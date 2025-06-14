@@ -2,109 +2,109 @@ const Order = require('../models/orders'); // Đường dẫn đến model Order
 const Discount = require('../models/discount'); // Đường dẫn đến model Discount
 const Product = require('../models/products'); 
 const OrderStatus = require('../models/orderStatus'); 
-const OrderStatusDescription = require('../models/orderStatusDescription'); 
 const { createPaymentLink } = require('./payment'); 
 const mongoose = require('mongoose');
 
 
 // API tạo đơn hàng + thanh toán
 exports.createOrder = async (req, res) => {
-  const { user_id, discount_code, items, payment_method, shipping_address } = req.body;
-
   try {
-    if (!user_id || !items || !Array.isArray(items) || items.length === 0 || !payment_method || !shipping_address) {
+    const { discount_code, items, payment_method, shipping_address } = req.body;
+    const user_id = req.user._id;
+
+    // Kiểm tra dữ liệu bắt buộc
+    if (!items || !Array.isArray(items) || items.length === 0 || !payment_method || !shipping_address) {
       return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
     }
 
+    // Lấy thông tin sản phẩm
     const productIds = items.map(item => item.productId);
     const products = await Product.find({ _id: { $in: productIds } });
 
     let total_amount = 0;
 
-  for (let item of items) {
-    const product = products.find(p => p._id.toString() === item.productId);
+    for (let item of items) {
+      const product = products.find(p => p._id.toString() === item.productId);
+      if (!product) {
+        return res.status(400).json({ message: `Sản phẩm với ID ${item.productId} không tồn tại.` });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ message: `Sản phẩm ${product.name} không đủ tồn kho.` });
+      }
 
-    if (!product) {
-      return res.status(400).json({ message: `Sản phẩm với ID ${item.productId} không tồn tại.` });
+      item.name = product.name;
+      item.price = product.price;
+      total_amount += product.price * item.quantity;
+
+      product.stock -= item.quantity;
+      await product.save();
     }
 
-    if (product.stock < item.quantity) {
-      return res.status(400).json({ message: `Sản phẩm ${product.name} không đủ tồn kho.` });
-    }
-    item.name = product.name;
-    // console.log("product.name", product.name);
-    
-
-    item.price = product.price;
-    total_amount += product.price * item.quantity;
-
-    product.stock -= item.quantity;
-    await product.save();
-  }
-
-
+    // Xử lý giảm giá nếu có
     let discount = null;
     if (discount_code) {
       discount = await Discount.findOne({ code: discount_code });
       if (!discount) return res.status(400).json({ message: 'Mã giảm giá không hợp lệ.' });
 
       const now = new Date();
-      if (now < discount.start_date || now > discount.end_date) return res.status(400).json({ message: 'Mã giảm giá đã hết hạn.' });
-      if (discount.used_count >= discount.usage_limit) return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng.' });
+      if (now < discount.start_date || now > discount.end_date)
+        return res.status(400).json({ message: 'Mã giảm giá đã hết hạn.' });
+
+      if (discount.used_count >= discount.usage_limit)
+        return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng.' });
 
       total_amount -= (total_amount * discount.percentage) / 100;
     }
 
+    // Lấy trạng thái "pending"
     const status = await OrderStatus.findOne({ code: 'pending' });
-    if (!status) return res.status(400).json({ message: 'Trạng thái đơn hàng không hợp lệ.' });
+    if (!status) return res.status(400).json({ message: 'Không tìm thấy trạng thái đơn hàng mặc định.' });
 
-    const orderCode = Date.now(); // mã đơn dùng làm orderCode cho PayOS
+    // Tạo đơn hàng
+    const orderCode = Date.now(); // tạm thời làm mã đơn
+
     const newOrder = new Order({
       user_id,
-      order_code: orderCode, // thêm dòng này
+      order_code: orderCode,
       total_amount,
       discount_id: discount ? discount._id : null,
       payment_status: 'unpaid',
       payment_method,
       status_id: status._id,
-      status_sub_id: null,
       shipping_address,
       items,
     });
-    console.log("Order items before payment:", newOrder.items);
-
 
     await newOrder.save();
 
+    // Cập nhật lượt dùng mã giảm giá
     if (discount) {
       discount.used_count += 1;
       await discount.save();
     }
 
+    // Nếu thanh toán online: tạo link PayOS
     if (payment_method === 'payos') {
       const paymentUrl = await createPaymentLink(newOrder);
+      if (!paymentUrl) return res.status(500).json({ message: 'Không thể tạo link thanh toán PayOS' });
 
-      if (paymentUrl) {
-        return res.status(200).json({
-          message: 'Đơn hàng đã được tạo thành công. Vui lòng thanh toán.',
-          payment_url: paymentUrl,
-        });
-      } else {
-        return res.status(500).json({ message: 'Không thể tạo link thanh toán PayOS' });
-      }
+      return res.status(200).json({
+        message: 'Đơn hàng đã được tạo. Vui lòng thanh toán.',
+        payment_url: paymentUrl,
+      });
     }
 
+    // Nếu COD: trả về đơn hàng luôn
     return res.status(200).json({
       message: 'Đơn hàng đã được tạo thành công.',
       order: newOrder,
     });
 
   } catch (err) {
-    console.error("Error in createOrder:", err);
-    res.status(500).send('Server Error');
+    console.error('Error in createOrder:', err);
+    res.status(500).json({ message: 'Lỗi máy chủ', error: err.message });
   }
 };
-
 // API lấy thông tin đơn hàng của người dùng
 exports.getUserOrders = async (req, res) => {
   try {
@@ -112,7 +112,6 @@ exports.getUserOrders = async (req, res) => {
 
     const orders = await Order.find({ user_id: userId })
       .populate('status_id', 'name code')          // Trạng thái chính
-      .populate('status_sub_id', 'name code')      // Trạng thái con (nếu có)
       .sort({ createdAt: -1 });                    // Mới nhất trước
     const totalOrder = orders.length;
 
@@ -159,7 +158,6 @@ exports.updateOrderStatus = async (req, res) => {
 
     // ✅ Cập nhật trạng thái
     order.status_id = status._id;
-    order.status_sub_id = status_sub ? status_sub._id : null;
     await order.save();
 
     console.log(`✅ Đơn hàng ${order._id} đã cập nhật trạng thái: ${status_code}${status_sub_code ? ' - ' + status_sub_code : ''}`);
@@ -192,7 +190,6 @@ exports.getOrdersByUserId = async (req, res) => {
 
     const orders = await Order.find({ user_id: objectId })
       .populate('status_id', 'name code')
-      .populate('status_sub_id', 'name code')
       .sort({ createdAt: -1 });
 
     const totalOrder = orders.length;

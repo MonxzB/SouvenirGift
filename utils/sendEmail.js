@@ -11,7 +11,7 @@ const sendEmail = async (to, subject, html) => {
     });
 
     const info = await transporter.sendMail({
-      from: `"Souvenir App" <${process.env.EMAIL_USER}>`, // 🔧 Sửa đúng biến
+      from: `"Souvenir App" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html
