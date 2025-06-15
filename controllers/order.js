@@ -11,6 +11,28 @@ exports.createOrder = async (req, res) => {
   try {
     const { discount_code, items, payment_method, shipping_address } = req.body;
     const user_id = req.user._id;
+    // console.log("user_id: ", user_id);
+
+
+    // Kiểm tra user đã có đơn hàng chưa thanh toán và chưa hết hạn
+    const existingOrder = await Order.findOne({
+      user_id,
+      $or: [
+        { payment_status: 'unpaid', expires_at: { $gt: new Date() } },
+        { payment_method: 'cod', payment_status: 'unpaid' } // Đơn COD không có expires_at?
+      ]
+    });
+    if (existingOrder) {
+      return res.status(400).json({
+        message: 'Bạn đã có một đơn hàng chưa thanh toán. Vui lòng thanh toán hoặc đợi đơn hết hạn.'
+      });
+    }
+
+    
+    const expires_at = new Date(Date.now() + (
+    payment_method === 'payos' 
+    ?  30 * 60 * 1000  : 3 * 24 * 60 * 60 * 1000));
+    
 
     // Kiểm tra dữ liệu bắt buộc
     if (!items || !Array.isArray(items) || items.length === 0 || !payment_method || !shipping_address) {
@@ -22,6 +44,7 @@ exports.createOrder = async (req, res) => {
     const products = await Product.find({ _id: { $in: productIds } });
 
     let total_amount = 0;
+    let product_count = 0;
 
     for (let item of items) {
       const product = products.find(p => p._id.toString() === item.productId);
@@ -36,9 +59,13 @@ exports.createOrder = async (req, res) => {
       item.price = product.price;
       total_amount += product.price * item.quantity;
 
+      product_count+=item.quantity;
+
       product.stock -= item.quantity;
       await product.save();
     }
+    console.log(product_count);
+    
 
     // Xử lý giảm giá nếu có
     let discount = null;
@@ -67,10 +94,12 @@ exports.createOrder = async (req, res) => {
       user_id,
       order_code: orderCode,
       total_amount,
+      product_count,
       discount_id: discount ? discount._id : null,
       payment_status: 'unpaid',
       payment_method,
       status_id: status._id,
+      expires_at,
       shipping_address,
       items,
     });
@@ -98,6 +127,7 @@ exports.createOrder = async (req, res) => {
     return res.status(200).json({
       message: 'Đơn hàng đã được tạo thành công.',
       order: newOrder,
+      product_count
     });
 
   } catch (err) {

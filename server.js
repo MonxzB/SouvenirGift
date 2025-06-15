@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const connectDB = require('./config/db');
 const routes = require('./routes');
-
+const startCronJob = require('./cron/expireOrders');
 
 
 // Load environment variables
@@ -26,10 +26,10 @@ app.get('/', (req, res) => {
 
 app.use('/api', routes);
 
-
-
 // Kết nối MongoDB
 connectDB();
+
+startCronJob();
 
 // Start server
 const PORT = process.env.PORT || 5000;

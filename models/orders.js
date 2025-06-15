@@ -21,7 +21,7 @@ const orderSchema = new mongoose.Schema({
   },
   payment_status: { 
     type: String, 
-    enum: ['unpaid', 'paid'], 
+    enum: ['unpaid', 'paid', 'canceled'], 
     default: 'unpaid' 
   },
   payment_method: { 
@@ -37,6 +37,10 @@ const orderSchema = new mongoose.Schema({
   shipping_address: { 
     type: String, 
     required: true 
+  },
+    expires_at: {
+    type: Date,
+    default: null,
   },
 items: [{
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },

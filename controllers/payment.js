@@ -63,6 +63,10 @@ const handleWebhook = async (req, res) => {
     const order = await Order.findOne({ order_code: data.orderCode });
 
     if (!order) return res.status(404).send('Order not found');
+    
+    if (order.payment_status === 'canceled' || order.expires_at < Date.now()) {
+      return res.status(400).json({ message: 'Đơn hàng đã bị hủy hoặc hết hạn. Không thể thanh toán.' });
+    }
 
     if (order.payment_status !== 'paid') {
       order.payment_status = 'paid';
@@ -70,6 +74,7 @@ const handleWebhook = async (req, res) => {
       order.payment_method = 'payos';
       await order.save();
     }
+
 
     res.sendStatus(200);
   } catch (err) {

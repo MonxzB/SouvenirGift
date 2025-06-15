@@ -36,7 +36,7 @@ const discountSchema = new mongoose.Schema({
   used_count: { 
     type: Number, 
     default: 0  // Số lượt đã sử dụng
-  }
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Discount', discountSchema);
