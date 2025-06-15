@@ -4,13 +4,13 @@ const Product = require('../models/products');
 // Thêm sản phẩm vào giỏ hàng
 exports.addToCart = async (req, res) => {
   try {
-    const items = req.body.items;  // Lấy mảng sản phẩm từ request
+    const items = req.body.items;  
 
     // Kiểm tra nếu mảng sản phẩm rỗng
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'No products to add to cart' });
     }
-
+    
     // Kiểm tra tồn kho cho mỗi sản phẩm
     for (let item of items) {
       const product = await Product.findById(item.productId);
@@ -27,7 +27,7 @@ exports.addToCart = async (req, res) => {
     }
 
     // Tìm giỏ hàng của người dùng
-    let cart = await Cart.findOne({ userId: req.user.id });  // req.user.id là ID người dùng đã xác thực
+    let cart = await Cart.findOne({ userId: req.user.id }); 
 
     if (!cart) {
       // Nếu không có giỏ hàng, tạo mới giỏ hàng
@@ -35,7 +35,7 @@ exports.addToCart = async (req, res) => {
         userId: req.user.id,
         items: items.map(item => ({
           productId: item.productId,
-          quantity: item.quantity
+          quantity: item.quantity,
         }))
       });
     } else {
@@ -57,7 +57,10 @@ exports.addToCart = async (req, res) => {
     cart.updatedAt = Date.now();
     await cart.save();  // Lưu giỏ hàng
 
-    res.status(200).json({ message: 'Products added to cart successfully', cart });
+    // Tính lại tổng số lượng sản phẩm sau khi đã thêm xong
+    let total_product = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    res.status(200).json({ message: 'Products added to cart successfully', cart,total_product });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
