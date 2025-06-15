@@ -135,6 +135,56 @@ exports.createOrder = async (req, res) => {
     res.status(500).json({ message: 'Lỗi máy chủ', error: err.message });
   }
 };
+
+// API huỷ hoặc xóa đơn hàng
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user._id;
+
+    const order = await Order.findOne({ _id: orderId, user_id: userId });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+    }
+
+    // Chỉ cho phép huỷ nếu chưa thanh toán và ở trạng thái pending
+    if (order.payment_status !== 'unpaid') {
+      return res.status(400).json({ message: 'Không thể huỷ đơn hàng đã thanh toán' });
+    }
+
+    const status = await OrderStatus.findById(order.status_id);
+    if (!status || status.code !== 'pending') {
+      return res.status(400).json({ message: 'Đơn hàng không ở trạng thái có thể huỷ' });
+    }
+
+    // Trả lại tồn kho
+    for (const item of order.items) {
+      const product = await Product.findById(item.productId);
+      if (product) {
+        product.stock += item.quantity;
+        await product.save();
+      }
+    }
+
+    // Nếu có mã giảm giá, giảm used_count
+    if (order.discount_id) {
+      const discount = await Discount.findById(order.discount_id);
+      if (discount && discount.used_count > 0) {
+        discount.used_count -= 1;
+        await discount.save();
+      }
+    }
+
+    // Xóa đơn hàng
+    await Order.deleteOne({ _id: orderId });
+
+    return res.status(200).json({ message: 'Đơn hàng đã được huỷ và xóa thành công.' });
+  } catch (err) {
+    console.error('Error in cancelOrder:', err);
+    res.status(500).json({ message: 'Lỗi máy chủ', error: err.message });
+  }
+};
 // API lấy thông tin đơn hàng của người dùng
 exports.getUserOrders = async (req, res) => {
   try {

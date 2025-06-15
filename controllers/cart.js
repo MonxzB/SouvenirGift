@@ -68,22 +68,43 @@ exports.addToCart = async (req, res) => {
 };
   
 //Lấy thông tin giỏ hàng của user
-exports.getUserCart = async (req,res) =>{
+exports.getUserCart = async (req, res) => {
   try {
     const userId = req.user._id;
-    
-    const cart = await Cart.findOne({ userId }).populate('items.productId', 'name price images');
+
+    // Lấy giỏ hàng và populate sản phẩm
+    const cart = await Cart.findOne({ userId }).populate('items.productId', 'name price stock images');
+
     if (!cart) {
       return res.status(404).json({ msg: 'Không tìm thấy giỏ hàng' });
     }
 
+    // Lọc các sản phẩm còn tồn kho > 0
+    const validItems = cart.items.filter(item => {
+      // productId có thể bị null nếu sản phẩm bị xóa khỏi DB, nên kiểm tra kỹ
+      return item.productId && item.productId.stock > 0;
+    });
 
-    res.status(200).json({ message: 'Lấy giỏ hàng thành công', cart });
+    // Nếu có thay đổi, cập nhật lại giỏ hàng
+    if (validItems.length !== cart.items.length) {
+      cart.items = validItems;
+      await cart.save();
+    }
+
+    const total_product = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    res.status(200).json({
+      message: 'Lấy giỏ hàng thành công',
+      cart,
+      total_product
+    });
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
-}
+};
+
 
 
 // Xóa sản phẩm khỏi giỏ hàng
@@ -123,8 +144,10 @@ exports.removeFromCart = async (req, res) => {
   // Cập nhật số lượng sản phẩm trong giỏ hàng
 exports.updateCartQuantity = async (req, res) => {
     try {
-      const { productId, quantity } = req.body;  // Lấy productId và quantity từ request
-  
+      const { productId } = req.params;
+      const {quantity} = req.body
+      // console.log("quantity: ", quantity);
+      
       // Tìm giỏ hàng của người dùng
       let cart = await Cart.findOne({ userId: req.user.id });
   

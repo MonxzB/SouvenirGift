@@ -1,4 +1,6 @@
 const Order = require('../models/orders');
+const Product = require('../models/products');
+const OrderStatus = require('../models/orderStatus'); 
 const payos = require('../utils/payos');
 const crypto = require('crypto');
 
@@ -82,8 +84,70 @@ const handleWebhook = async (req, res) => {
     res.status(400).send('Invalid webhook');
   }
 };
+const cancelOrderByPayOS = async (req, res) => {
+  try {
+    console.log('✅ Đã vào router GET /payment/cancel');
+
+    const order_code = req.query.order_code || req.query.orderCode;
+    console.log('🔁 /payment/cancel HIT with query:', req.query);
+
+    if (!order_code) {
+      return res.status(400).json({ message: 'Thiếu mã đơn hàng (order_code)' });
+    }
+
+    const order = await Order.findOne({ order_code });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
+    }
+
+    if (order.payment_method !== 'payos') {
+      return res.status(400).json({ message: 'Đơn hàng không thuộc thanh toán PayOS' });
+    }
+
+    if (order.payment_status !== 'unpaid') {
+      return res.status(400).json({ message: 'Đơn hàng đã được xử lý, không thể huỷ' });
+    }
+
+    const status = await OrderStatus.findById(order.status_id);
+    if (!status || status.code !== 'pending') {
+      return res.status(400).json({ message: 'Đơn hàng không ở trạng thái chờ xử lý' });
+    }
+
+    // Trả lại tồn kho
+    for (const item of order.items) {
+      const product = await Product.findById(item.productId);
+      if (product) {
+        product.stock += item.quantity;
+        await product.save();
+      }
+    }
+
+    // Giảm lượt sử dụng mã giảm giá nếu có
+    if (order.discount_id) {
+      const discount = await Discount.findById(order.discount_id);
+      if (discount && discount.used_count > 0) {
+        discount.used_count -= 1;
+        await discount.save();
+      }
+    }
+
+    // Cập nhật trạng thái thanh toán
+    order.payment_status = 'canceled';
+    await order.save();
+
+    // Có thể redirect hoặc trả JSON
+    return res.redirect('/order-canceled'); // Hoặc: res.status(200).json({ message: 'Huỷ đơn hàng thành công.' });
+
+  } catch (err) {
+    console.error('Error in cancelOrderByPayOS:', err);
+    res.status(500).json({ message: 'Lỗi máy chủ', error: err.message });
+  }
+};
+
 
 module.exports = {
   createPaymentLink,
   handleWebhook,
+  cancelOrderByPayOS
 };
